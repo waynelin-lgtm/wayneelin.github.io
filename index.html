@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="專為 00685L 槓桿部位與現金設計的再平衡精算計算機，自動扣除真實摩擦成本。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>00685L 再平衡計算機 (實戰精確交易版)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght=600;700;900&family=Noto+Sans+TC:wght=400;500;700&family=IBM+Plex+Mono:wght=400;500;600&display=swap');
+
+:root{
+  --ink:#12172B;
+  --panel:#1B2140;
+  --panel-2:#232A4D;
+  --paper:#F2EFE7;
+  --muted:#8B92B2;
+  --gold:#C9992A;
+  --gold-soft:#E8C878;
+  --teal:#4FA98A;
+  --coral:#E2725B;
+  --hair:rgba(242,239,231,0.12);
+  --radius:14px;
+}
+
+*{box-sizing:border-box;}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:var(--ink);
+  color:var(--paper);
+  font-family:'Noto Sans TC', sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+body{
+  min-height:100vh;
+  padding:48px 20px 80px;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(201,153,42,0.10), transparent 60%),
+    var(--ink);
+}
+
+.wrap{
+  max-width:880px;
+  margin:0 auto;
+}
+
+/* ---------- Header ---------- */
+header{
+  text-align:center;
+  margin-bottom:40px;
+}
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  letter-spacing:0.28em;
+  color:var(--gold-soft);
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+h1{
+  font-family:'Noto Serif TC', serif;
+  font-weight:900;
+  font-size:clamp(28px,5vw,42px);
+  margin:0 0 12px;
+  letter-spacing:0.01em;
+}
+h1 .accent{ color:var(--gold-soft); }
+.sub{
+  color:var(--muted);
+  font-size:15px;
+  max-width:520px;
+  margin:0 auto;
+  line-height:1.7;
+}
+
+/* ---------- Seesaw signature element ---------- */
+.seesaw-stage{
+  position:relative;
+  height:230px;
+  margin:16px auto 8px;
+  max-width:620px;
+}
+.seesaw-svg{ width:100%; height:100%; display:block; overflow:visible; }
+.beam-group{
+  transform-origin:300px 118px;
+  transition:transform 0.5s cubic-bezier(.34,1.2,.4,1);
+  will-change:transform;
+}
+.pan-label{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  fill:var(--muted);
+  text-anchor:middle;
+}
+.pan-value{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:16px;
+  font-weight:600;
+  text-anchor:middle;
+}
+.pan-value.stock{ fill:var(--gold-soft); }
+.pan-value.cash{ fill:var(--teal); }
+.status-chip{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin:6px auto 0;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  letter-spacing:0.03em;
+}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 0 4px rgba(79,169,138,0.18);
+  transition:background 0.3s, box-shadow 0.3s;
+}
+.status-dot.off{
+  background:var(--coral);
+  box-shadow:0 0 0 4px rgba(226,114,91,0.18);
+}
+.status-text{ color:var(--muted); }
+.status-text b{ color:var(--paper); font-weight:600; }
+
+/* ---------- Cards ---------- */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin-top:36px;
+}
+@media (max-width:600px){ .grid{ grid-template-columns:1fr; } }
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--hair);
+  border-radius:var(--radius);
+  padding:24px;
+}
+.card-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.swatch{
+  width:10px;height:10px;border-radius:3px;
+  transform:rotate(45deg);
+}
+.swatch.gold{ background:var(--gold-soft); }
+.swatch.teal{ background:var(--teal); }
+.card-title{
+  font-family:'Noto Serif TC', serif;
+  font-weight:700;
+  font-size:17px;
+}
+.field{ margin-bottom:16px; }
+.field:last-child{ margin-bottom:0; }
+label{
+  display:block;
+  font-size:12.5px;
+  color:var(--muted);
+  margin-bottom:6px;
+  letter-spacing:0.02em;
+}
+.input-row{
+  display:flex;
+  align-items:center;
+  background:var(--ink);
+  border:1px solid var(--hair);
+  border-radius:9px;
+  padding:0 12px;
+  transition:border-color 0.2s, box-shadow 0.2s;
+}
+.input-row:focus-within{ 
+  border-color:var(--gold-soft); 
+  box-shadow: 0 0 0 3px rgba(232, 200, 120, 0.12);
+}
+.input-row .prefix{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+  color:var(--muted);
+  padding-right:8px;
+}
+input[type=number], select{
+  flex:1;
+  background:transparent;
+  border:none;
+  outline:none;
+  color:var(--paper);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:16px;
+  padding:12px 0;
+  width:100%;
+  -moz-appearance:textfield;
+}
+select {
+  cursor: pointer;
+  background-color: var(--ink);
+}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{
+  -webkit-appearance:none; margin:0;
+}
+.derived{
+  margin-top:8px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12.5px;
+  color:var(--muted);
+}
+.derived b{ color:var(--paper); }
+.input-row.price-row{ gap:8px; }
+.fetch-btn{
+  flex-shrink:0;
+  background:rgba(201,153,42,0.14);
+  color:var(--gold-soft);
+  border:1px solid rgba(201,153,42,0.4);
+  border-radius:7px;
+  padding:8px 14px;
+  font-family:'Noto Sans TC', sans-serif;
+  font-size:12.5px;
+  font-weight:500;
+  cursor:pointer;
+  transition:background 0.2s, opacity 0.2s;
+  white-space:nowrap;
+}
+.fetch-btn:hover{ background:rgba(201,153,42,0.24); }
+.fetch-btn:disabled{ opacity:0.5; cursor:wait; }
+.derived.error{ color:var(--coral); }
+.derived.ok{ color:var(--teal); }
+
+/* ---------- Settings row ---------- */
+.settings{
+  margin-top:18px;
+  background:var(--panel);
+  border:1px solid var(--hair);
+  border-radius:var(--radius);
+  padding:22px 24px;
+}
+.settings-title{
+  font-family:'Noto Serif TC', serif;
+  font-weight:700;
+  font-size:15px;
+  margin-bottom:16px;
+  color:var(--muted);
+}
+.slider-block{ margin-bottom:16px; }
+.slider-top{
+  display:flex;
+  justify-content:between;
+  align-items:center;
+}
+.slider-top .val{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:14px;
+  color:var(--gold-soft);
+  font-weight:600;
+  margin-left:auto;
+}
+.slider-container {
+  padding: 10px 0; 
+  margin: -10px 0;
+  position: relative;
+}
+input[type=range]{
+  width:100%;
+  -webkit-appearance:none;
+  appearance:none;
+  height:4px;
+  background:var(--hair);
+  border-radius:2px;
+  outline:none;
+  display:block;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--gold-soft);
+  cursor:pointer;
+  border:3px solid var(--ink);
+  box-shadow:0 0 0 1px var(--gold-soft);
+  transition: transform 0.1s, background-color 0.2s;
+  will-change: transform;
+}
+input[type=range]:active::-webkit-slider-thumb{
+  transform: scale(1.25);
+  background-color: #fff;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hair);
+}
+@media (max-width:600px){ .settings-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Result panel ---------- */
+.result{
+  margin-top:18px;
+  border-radius:var(--radius);
+  padding:28px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--hair);
+  transition: background 0.3s ease;
+}
+.result.buy { background:linear-gradient(155deg, rgba(201,153,42,0.16), var(--panel) 55%); }
+.result.sell { background:linear-gradient(155deg, rgba(79,169,138,0.16), var(--panel) 55%); }
+.result.hold { background:var(--panel); }
+.result.error-state { background: linear-gradient(155deg, rgba(226,114,91,0.15), var(--panel) 55%); border-color: rgba(226,114,91,0.4); }
+
+.result-eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11.5px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+.result-headline{
+  font-family:'Noto Serif TC', serif;
+  font-weight:700;
+  font-size:clamp(20px,3.4vw,26px);
+  line-height:1.5;
+  margin-bottom:22px;
+}
+.result-headline .num{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600;
+}
+.result.buy .num{ color:var(--gold-soft); }
+.result.sell .num{ color:var(--teal); }
+.result.error-state .num { color:var(--coral); }
+
+.cost-tip {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: -12px;
+  margin-bottom: 20px;
+}
+.cost-tip b { color: var(--coral); font-weight: 500; }
+
+.apply-row{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid var(--hair);
+}
+.apply-btn{
+  flex-shrink:0;
+  background:var(--gold-soft);
+  color:var(--ink);
+  border:none;
+  border-radius:8px;
+  padding:11px 20px;
+  font-family:'Noto Sans TC', sans-serif;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform 0.15s, opacity 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.apply-btn:hover:not(:disabled){ 
+  transform:translateY(-1px); 
+  box-shadow: 0 4px 12px rgba(232, 200, 120, 0.2);
+}
+.apply-btn:disabled{
+  background:var(--panel-2);
+  color:var(--muted);
+  cursor:not-allowed;
+  transform:none;
+}
+.result.sell .apply-btn{ background:var(--teal); color:var(--ink); }
+.apply-status{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:12px;
+  color:var(--muted);
+}
+.apply-status.done{ color:var(--teal); }
+
+.result-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;
+  background:var(--hair);
+  border-radius:10px;
+  overflow:hidden;
+}
+@media (max-width:600px){ .result-grid{ grid-template-columns:1fr; } }
+.result-cell{
+  background:var(--panel-2);
+  padding:16px 18px;
+}
+.result-cell .label{
+  font-size:11.5px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.result-cell .value{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:17px;
+  font-weight:600;
+}
+.result-cell.wide{
+  grid-column:1 / -1;
+  background:rgba(242,239,231,0.04);
+}
+.result-cell.wide .value.big{
+  font-size:26px;
+}
+.result-cell.action .value{
+  font-size:18px;
+}
+.result.buy .result-cell.action .value{ color:var(--gold-soft); }
+.result.sell .result-cell.action .value{ color:var(--teal); }
+.result.hold .result-cell.action .value{ color:var(--muted); }
+.result.error-state .result-cell.action .value{ color:var(--coral); }
+
+/* ---------- Log & Visualization Panel ---------- */
+.history-panel {
+  margin-top: 18px;
+  background: var(--panel);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.history-title {
+  font-family: 'Noto Serif TC', serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--paper);
+}
+.clear-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.clear-btn:hover {
+  color: var(--coral);
+  border-color: rgba(226,114,91,0.3);
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  margin-bottom: 24px;
+  background: rgba(18, 23, 43, 0.4);
+  border: 1px solid var(--hair);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--hair);
+  background: linear-gradient(to right, white 30%, rgba(255,255,255,0)), linear-gradient(to right, rgba(255,255,255,0), white 70%) 100% 0;
+  background-size: 50px 100%, 50px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, scroll;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+th, td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hair);
+}
+th {
+  background: var(--panel-2);
+  color: var(--muted);
+  font-weight: 500;
+}
+td {
+  background: rgba(27,33,64,0.3);
+  font-family: 'IBM Plex Mono', monospace;
+}
+tr:last-child td {
+  border-bottom: none;
+}
+.log-action { font-weight: 600; }
+.log-action.buy { color: var(--gold-soft); }
+.log-action.sell { color: var(--teal); }
+.empty-log {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px;
+  font-style: italic;
+}
+
+footer{
+  text-align:center;
+  margin-top:40px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.8;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+</head>
+<body>
+<main class="wrap">
+
+  <header>
+    <div class="eyebrow">REBALANCING CALCULATOR</div>
+    <h1>00685L <span class="accent">槓桿部位</span> × 現金<br>再平衡計算機</h1>
+    <p class="sub">輸入目前的 00685L 持股與現金水位，計算機會自動精算手續費折讓與 0.1% 槓桿證交稅等真實摩擦成本。</p>
+  </header>
+
+  <div class="seesaw-stage">
+    <svg class="seesaw-svg" viewBox="0 0 600 230" aria-hidden="true">
+      <line x1="300" y1="118" x2="300" y2="205" stroke="#8B92B2" stroke-width="6" stroke-linecap="round" opacity="0.35"/>
+      <polygon points="270,205 330,205 300,235" fill="#8B92B2" opacity="0.35" transform="translate(0,-30)"/>
+      <g class="beam-group" id="beamGroup">
+        <rect x="95" y="114" width="410" height="8" rx="4" fill="#F2EFE7" opacity="0.85"/>
+        <line x1="130" y1="122" x2="130" y2="168" stroke="#C9992A" stroke-width="2.5" opacity="0.6"/>
+        <line x1="175" y1="122" x2="150" y2="168" stroke="#C9992A" stroke-width="2.5" opacity="0.6"/>
+        <line x1="85" y1="122" x2="110" y2="168" stroke="#C9992A" stroke-width="2.5" opacity="0.6"/>
+        <ellipse id="panStock" cx="130" cy="176" rx="70" ry="14" fill="none" stroke="#C9992A" stroke-width="3"/>
+        <line x1="470" y1="122" x2="470" y2="168" stroke="#4FA98A" stroke-width="2.5" opacity="0.6"/>
+        <line x1="425" y1="122" x2="450" y2="168" stroke="#4FA98A" stroke-width="2.5" opacity="0.6"/>
+        <line x1="515" y1="122" x2="490" y2="168" stroke="#4FA98A" stroke-width="2.5" opacity="0.6"/>
+        <ellipse id="panCash" cx="470" cy="176" rx="70" ry="14" fill="none" stroke="#4FA98A" stroke-width="3"/>
+        <text x="130" y="200" class="pan-label">00685L</text>
+        <text id="stockPct" x="130" y="150" class="pan-value stock">50%</text>
+        <text x="470" y="200" class="pan-label">現金</text>
+        <text id="cashPct" x="470" y="150" class="pan-value cash">50%</text>
+      </g>
+      <circle cx="300" cy="118" r="7" fill="#F2EFE7"/>
+    </svg>
+  </div>
+
+  <div class="status-chip" aria-live="polite">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-text" id="statusText">在容忍範圍內</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-head">
+        <span class="swatch gold"></span>
+        <span class="card-title">00685L 持股</span>
+      </div>
+      <div class="field">
+        <label for="shares">持有張數（張，1 張＝1,000 股）</label>
+        <div class="input-row">
+          <input type="number" id="shares" value="10" step="0.001" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label for="price">目前股價（元）</label>
+        <div class="input-row price-row">
+          <span class="prefix">NT$</span>
+          <input type="number" id="price" value="18.50" step="0.01" inputmode="decimal">
+          <button type="button" id="fetchPriceBtn" class="fetch-btn">更新</button>
+        </div>
+        <div class="derived" id="priceStatus">尚未自動更新，請手動輸入或按「更新」</div>
+      </div>
+      <div class="derived">市值 <b id="stockValue">NT$ 185,000</b></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="swatch teal"></span>
+        <span class="card-title">現金部位</span>
+      </div>
+      <div class="field">
+        <label for="cash">現金金額（元）</label>
+        <div class="input-row">
+          <span class="prefix">NT$</span>
+          <input type="number" id="cash" value="185000" step="1" inputmode="numeric">
+        </div>
+      </div>
+      <div class="derived" style="margin-top:44px;">合計總資產 <b id="totalValue">NT$ 370,000</b></div>
+    </div>
+  </div>
+
+  <div class="settings">
+    <div class="settings-title">再平衡參數</div>
+    <div class="slider-block">
+      <div class="slider-top">
+        <label for="ratio" class="name">00685L 目標比例</label>
+        <output for="ratio" class="val" id="ratioVal">50%</output>
+      </div>
+      <div class="slider-container">
+        <input type="range" id="ratio" min="0" max="100" value="50" step="1">
+      </div>
+    </div>
+    <div class="slider-block">
+      <div class="slider-top">
+        <label for="threshold" class="name">容忍區間</label>
+        <output for="threshold" class="val" id="thresholdVal">±5%</output>
+      </div>
+      <div class="slider-container">
+        <input type="range" id="threshold" min="0" max="20" value="5" step="1">
+      </div>
+    </div>
+
+    <div class="settings-grid">
+      <div class="field">
+        <label for="discount">券商手續費折讓（例如：2.8 折輸入 2.8）</label>
+        <div class="input-row">
+          <input type="number" id="discount" value="2.8" step="0.1" inputmode="decimal">
+          <span class="prefix" style="padding-left:8px;">折</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="minFee">單筆最低手續費（預設 20 元）</label>
+        <div class="input-row">
+          <span class="prefix">NT$</span>
+          <input type="number" id="minFee" value="20" step="1" inputmode="numeric">
+        </div>
+      </div>
+      
+      <div class="field" style="grid-column: 1 / -1;">
+        <label for="tradeUnit">交易單位與零股處理規則</label>
+        <div class="input-row">
+          <select id="tradeUnit">
+            <option value="any">精確零股交易 (無條件進位至「整數股」)</option>
+            <option value="lot">限定「整數張」交易 (無條件進位至「整數張」)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result hold" id="resultPanel">
+    <div class="result-eyebrow">建議動作</div>
+    <div class="result-headline" id="resultHeadline">目前配置落在容忍區間內，<span class="num">暫不需要再平衡</span>。</div>
+    
+    <div class="cost-tip" id="costTip"></div>
+
+    <div class="result-grid">
+      <div class="result-cell wide">
+        <div class="label">總資產</div>
+        <div class="value big" id="totalOut">NT$ 370,000</div>
+      </div>
+      <div class="result-cell">
+        <div class="label">目前 00685L 比例</div>
+        <div class="value" id="curRatioOut">50.0%</div>
+      </div>
+      <div class="result-cell">
+        <div class="label">目標 00685L 比例</div>
+        <div class="value" id="tgtRatioOut">50.0%</div>
+      </div>
+      <div class="result-cell">
+        <div class="label">偏離目標</div>
+        <div class="value" id="devOut">+0.0%</div>
+      </div>
+      <div class="result-cell action">
+        <div class="label" id="actionAmtLabel">建議交易金額</div>
+        <div class="value" id="actionAmtOut">NT$ 0</div>
+      </div>
+      <div class="result-cell action">
+        <div class="label" id="actionLotLabel">建議交易張數</div>
+        <div class="value" id="actionLotOut">0.0 張</div>
+      </div>
+    </div>
+    <div class="apply-row">
+      <button type="button" id="applyBtn" class="apply-btn" disabled>套用再平衡結果</button>
+      <span class="apply-status" id="applyStatus">目前已在容忍範圍內，無需套用</span>
+    </div>
+  </div>
+
+  <div class="history-panel">
+    <div class="history-header">
+      <span class="history-title">資產曲線與再平衡日誌</span>
+      <button type="button" id="clearLogBtn" class="clear-btn">清除歷史數據</button>
+    </div>
+    <div class="chart-container">
+      <canvas id="assetChart"></canvas>
+    </div>
+    <div class="table-container">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>時間</th>
+            <th>總資產 (已扣交易成本)</th>
+            <th>再平衡前比例</th>
+            <th>動作</th>
+            <th>變動張數 / 金額 (含預估摩擦成本)</th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    數字僅供試算參考，不構成投資建議。00685L 為 2 倍槓桿型 ETF，證交稅享有 0.1% 減半優惠。再平衡涉及手續費與稅負，套用時系統會自動扣除成本。
+  </footer>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const fmtMoney = n => 'NT$ ' + Math.round(n).toLocaleString('en-US');
+  const fmtShares = n => Math.round(n).toLocaleString('en-US') + ' 股';
+  const fmtLots = n => (n/1000).toLocaleString('en-US', {minimumFractionDigits:1, maximumFractionDigits:3}) + ' 張';
+
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+  // ⚡ 實作防抖（Debounce）高效能輔助函式
+  function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func.apply(this, args);
+      }, delay);
+    };
+  }
+
+  let pendingRebalance = null;
+  let isApplying = false;
+  let currentSnapshot = {}; 
+  let myChart = null;
+
+  function isStorageAvailable() {
+    try {
+      localStorage.setItem('__test__', '__test__');
+      localStorage.removeItem('__test__');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  const storageSupported = isStorageAvailable();
+
+  function loadSavedData() {
+    if (!storageSupported) {
+      initChart([]);
+      return;
+    }
+    const s = localStorage.getItem('rebalance_shares');
+    const p = localStorage.getItem('rebalance_price');
+    const c = localStorage.getItem('rebalance_cash');
+    const r = localStorage.getItem('rebalance_ratio');
+    const t = localStorage.getItem('rebalance_threshold');
+    const d = localStorage.getItem('rebalance_discount');
+    const m = localStorage.getItem('rebalance_minfee');
+    const u = localStorage.getItem('rebalance_tradeunit');
+
+    if (s !== null && s !== "") $('shares').value = s;
+    if (p !== null && p !== "") $('price').value = p;
+    if (c !== null && c !== "") $('cash').value = c;
+    if (r !== null && r !== "") $('ratio').value = r;
+    if (t !== null && t !== "") $('threshold').value = t;
+    
+    $('discount').value = (d !== null && d !== "") ? d : "2.8";
+    $('minFee').value = (m !== null && m !== "") ? m : "20";
+    $('tradeUnit').value = (u === 'any' || u === 'lot') ? u : 'any';
+
+    const logs = JSON.parse(localStorage.getItem('rebalance_logs') || '[]');
+    initChart(logs);
+    renderLogAndChart(logs);
+  }
+
+  function saveCurrentData() {
+    if (isApplying || !storageSupported) return; 
+    localStorage.setItem('rebalance_shares', $('shares').value);
+    localStorage.setItem('rebalance_price', $('price').value);
+    localStorage.setItem('rebalance_cash', $('cash').value);
+    localStorage.setItem('rebalance_ratio', $('ratio').value);
+    localStorage.setItem('rebalance_threshold', $('threshold').value);
+    localStorage.setItem('rebalance_discount', $('discount').value);
+    localStorage.setItem('rebalance_minfee', $('minFee').value);
+    localStorage.setItem('rebalance_tradeunit', $('tradeUnit').value);
+  }
+
+  function calculateTradingCost(tradeValue, type) {
+    if (!tradeValue || tradeValue <= 0 || isNaN(tradeValue)) return { fee: 0, tax: 0, total: 0 };
+    
+    const discount = parseFloat($('discount').value) || 10; 
+    const minFee = parseFloat($('minFee').value) || 20;
+    
+    let fee = tradeValue * 0.001425 * (discount / 10);
+    if (fee < minFee) fee = minFee;
+    fee = Math.round(fee);
+
+    let tax = (type === 'sell') ? Math.round(tradeValue * 0.001) : 0;
+
+    return { fee, tax, total: fee + tax };
+  }
+
+  function calc(){
+    const rawLots = parseFloat($('shares').value);
+    const rawPrice = parseFloat($('price').value);
+    const rawCash = parseFloat($('cash').value);
+    const rawDiscount = parseFloat($('discount').value);
+    const rawMinFee = parseFloat($('minFee').value);
+
+    const targetRatio = parseFloat($('ratio').value) || 50;
+    const threshold = parseFloat($('threshold').value) || 5;
+    const tradeUnit = $('tradeUnit').value;
+
+    $('ratioVal').textContent = targetRatio + '%';
+    $('thresholdVal').textContent = '±' + threshold + '%';
+
+    const errors = [];
+    if (!isNaN(rawLots) && rawLots < 0) errors.push('持有張數');
+    if (!isNaN(rawPrice) && rawPrice < 0) errors.push('目前股價');
+    if (!isNaN(rawCash) && rawCash < 0) errors.push('現金金額');
+    if (!isNaN(rawDiscount) && rawDiscount < 0) errors.push('手續費折讓');
+    if (!isNaN(rawMinFee) && rawMinFee < 0) errors.push('最低手續費');
+
+    if (errors.length > 0) {
+      const panel = $('resultPanel');
+      panel.className = 'result error-state';
+      $('resultHeadline').innerHTML = `⚠️ 欄位數值錯誤：<span class="num">${errors.join('、')}</span> 不能小於 0！`;
+      $('costTip').textContent = '請修正上方標示為負數的欄位，系統將會自動重啟計算。';
+      
+      $('applyBtn').disabled = true;
+      $('applyStatus').textContent = '數值異常，無法執行再平衡。';
+      
+      $('stockValue').textContent = 'NT$ --';
+      $('totalValue').textContent = 'NT$ --';
+      $('totalOut').textContent = 'NT$ --';
+      $('curRatioOut').textContent = '--%';
+      $('devOut').textContent = '--%';
+      $('actionAmtOut').textContent = 'NT$ --';
+      $('actionLotOut').textContent = '-- 張';
+      
+      setStatus(false, '請修正負數欄位');
+      pendingRebalance = null;
+      return; 
+    }
+
+    const lots = isNaN(rawLots) ? 0 : rawLots;
+    const price = isNaN(rawPrice) ? 0 : rawPrice;
+    const cash = isNaN(rawCash) ? 0 : rawCash;
+
+    const shares = lots * 1000;
+    const stockValue = shares * price;
+    const totalValue = stockValue + cash;
+
+    $('stockValue').textContent = fmtMoney(stockValue);
+    $('totalValue').textContent = fmtMoney(totalValue);
+
+    if (totalValue <= 0) {
+      $('resultHeadline').textContent = '請輸入持股與現金資料';
+      $('costTip').textContent = '';
+      updateSeesaw(50, 50);
+      setStatus(true, '尚無資料');
+      pendingRebalance = null;
+      $('applyBtn').disabled = true;
+      return;
+    }
+
+    const curRatio = (stockValue / totalValue) * 100;
+    const deviation = curRatio - targetRatio;
+    const targetStockValue = totalValue * (targetRatio/100);
+    
+    let diffValue = targetStockValue - stockValue;
+    let diffShares = price > 0 ? (diffValue / price) : 0;
+
+    if (Math.abs(diffShares) > 0) {
+      const isPositive = diffShares > 0;
+      if (tradeUnit === 'lot') {
+        const diffLots = diffShares / 1000;
+        const targetLots = isPositive ? Math.ceil(diffLots) : Math.floor(diffLots);
+        diffShares = targetLots * 1000;
+      } else {
+        diffShares = isPositive ? Math.ceil(diffShares) : Math.floor(diffShares);
+      }
+      diffValue = diffShares * price;
+    }
+
+    const tradeType = diffShares > 0 ? 'buy' : 'sell';
+    const absTradeValue = Math.abs(diffValue);
+    const absShares = Math.abs(diffShares);
+
+    const costs = calculateTradingCost(absTradeValue, tradeType);
+
+    currentSnapshot = {
+      totalValue,
+      curRatioNum: curRatio,
+      curRatioStr: curRatio.toFixed(1) + '%'
+    };
+
+    $('totalOut').textContent = fmtMoney(totalValue);
+    $('curRatioOut').textContent = curRatio.toFixed(1) + '%';
+    $('tgtRatioOut').textContent = targetRatio.toFixed(1) + '%';
+    $('devOut').textContent = (deviation>=0?'+':'') + deviation.toFixed(1) + '%';
+
+    const panel = $('resultPanel');
+    const headline = $('resultHeadline');
+
+    if (Math.abs(deviation) <= threshold || absShares === 0) {
+      panel.className = 'result hold';
+      if (absShares === 0 && Math.abs(deviation) > threshold) {
+        headline.innerHTML = '已達再平衡標準，但因<span class="num">交易單位限制</span>導致無法下單。';
+        $('costTip').textContent = '提示：當前偏離度需要零股調整，若需交易請切換為零股模式。';
+      } else {
+        headline.innerHTML = '目前配置落在容忍區間內，<span class="num">暫不需要再平衡</span>。';
+        $('costTip').textContent = '資產偏離尚未達標，此時調整不具經濟效益。';
+      }
+      $('actionAmtLabel').textContent = '建議交易金額';
+      $('actionLotLabel').textContent = '建議交易張數';
+      $('actionAmtOut').textContent = 'NT$ 0';
+      $('actionLotOut').textContent = '0.0 張';
+      setStatus(true, '在容忍範圍內');
+      pendingRebalance = null;
+      $('applyBtn').disabled = true;
+      if (!isApplying) $('applyStatus').textContent = '目前已在容忍範圍內或受限交易單位，無需套用';
+    } else {
+      if (!isApplying) {
+        $('applyBtn').disabled = false;
+        $('applyStatus').textContent = '套用時，現金部位將同步自動扣除預估的摩擦成本';
+      }
+
+      const costPct = ((costs.total / totalValue) * 100).toFixed(2);
+      $('costTip').innerHTML = `💡 預估本次交易摩擦成本：<b>${fmtMoney(costs.total)}</b> (券商手續費 ${fmtMoney(costs.fee)} + 槓桿證交稅 ${fmtMoney(costs.tax)})，約占總資產 <b>${costPct}%</b>。`;
+
+      if (tradeType === 'buy') {
+        panel.className = 'result buy';
+        headline.innerHTML = '00685L 部位偏低，建議 <span class="num">買進約 ' + fmtMoney(absTradeValue) + '</span>（約 <span class="num">' + fmtShares(absShares) + '</span>）。';
+        $('actionAmtLabel').textContent = '建議買進金額';
+        $('actionLotLabel').textContent = '建議買進張數';
+        pendingRebalance = { diffValue, diffShares, type: 'buy', absValue: absTradeValue, absShares, totalCost: costs.total };
+      } else {
+        panel.className = 'result sell';
+        headline.innerHTML = '00685L 部位偏高，建議 <span class="num">賣出約 ' + fmtMoney(absTradeValue) + '</span>（約 <span class="num">' + fmtShares(absShares) + '</span>）。';
+        $('actionAmtLabel').textContent = '建議賣出金額';
+        $('actionLotLabel').textContent = '建議賣出張數';
+        pendingRebalance = { diffValue, diffShares, type: 'sell', absValue: absTradeValue, absShares, totalCost: costs.total };
+      }
+      $('actionAmtOut').textContent = fmtMoney(absTradeValue);
+      $('actionLotOut').textContent = fmtLots(absShares) + '（' + fmtShares(absShares) + '）';
+      setStatus(false, tradeType === 'buy' ? '建議加碼 00685L' : '建議減碼 00685L');
+    }
+
+    updateSeesaw(curRatio, 100-curRatio);
+    saveCurrentData();
+  }
+
+  function updateSeesaw(stockPct, cashPct){
+    $('stockPct').textContent = stockPct.toFixed(0) + '%';
+    $('cashPct').textContent = cashPct.toFixed(0) + '%';
+    const angle = clamp((stockPct - 50) * -0.7, -18, 18);
+    $('beamGroup').style.transform = 'rotate(' + angle + 'deg)';
+  }
+
+  function setStatus(ok, text){
+    $('statusDot').className = 'status-dot' + (ok ? '' : ' off');
+    $('statusText').innerHTML = '<b>' + text + '</b>';
+  }
+
+  async function fetchLatestPrice(){
+    const btn = $('fetchPriceBtn');
+    const status = $('priceStatus');
+    btn.disabled = true; btn.textContent = '查詢中…';
+    status.className = 'derived'; status.textContent = '正在向證交所查詢最新成交價…';
+
+    const target = 'https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_00685L.tw&json=1&delay=0';
+    const proxies = [
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
+      'https://corsproxy.io/?' + encodeURIComponent(target)
+    ];
+
+    for (const proxyUrl of proxies){
+      try{
+        const res = await fetch(proxyUrl, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const info = data.msgArray && data.msgArray[0];
+        if (!info) continue;
+        let zVal = info.z ? info.z.trim() : '';
+        let price = (zVal && zVal !== '-' && !isNaN(zVal)) ? parseFloat(zVal) : parseFloat(info.y);
+        if (!price || isNaN(price)) continue;
+
+        $('price').value = price.toFixed(2);
+        status.className = 'derived ok'; status.textContent = '已更新成交價（' + (info.t || new Date().toLocaleTimeString('zh-TW')) + '）';
+        isApplying = false; calc();
+        btn.disabled = false; btn.textContent = '更新';
+        return;
+      }catch(e){
+        console.error('Proxy Error:', e);
+      }
+    }
+    status.className = 'derived error'; status.textContent = '自動更新失敗（API 或代理伺服器超時），請手動輸入股價';
+    btn.disabled = false; btn.textContent = '更新';
+  }
+
+  function applyRebalance(){
+    if (!pendingRebalance) return;
+    const { diffValue, diffShares, type, absValue, absShares, totalCost } = pendingRebalance;
+
+    pushLog(currentSnapshot.totalValue - totalCost, currentSnapshot.curRatioNum, currentSnapshot.curRatioStr, type, absValue, absShares, totalCost);
+
+    isApplying = true; 
+
+    const currentLots = Math.max(0, parseFloat($('shares').value) || 0);
+    const currentCash = Math.max(0, parseFloat($('cash').value) || 0);
+
+    const newLots = currentLots + (diffShares / 1000);
+    const newCash = currentCash - diffValue - totalCost;
+
+    $('shares').value = Math.max(0, newLots).toFixed(3).replace(/\.?0+$/, '');
+    $('cash').value = Math.max(0, Math.round(newCash));
+
+    $('applyStatus').className = 'apply-status done';
+    $('applyStatus').textContent = `已套用！資產已更新，現金部位已自動扣除成本 ${fmtMoney(totalCost)}`;
+    $('applyBtn').disabled = true;
+
+    calc();
+    saveCurrentData();
+  }
+
+  function pushLog(total, ratioNum, ratioStr, type, amt, shares, totalCost) {
+    if (!storageSupported) return;
+    const logs = JSON.parse(localStorage.getItem('rebalance_logs') || '[]');
+    const now = new Date();
+    const timeStr = `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    
+    logs.unshift({
+      time: timeStr,
+      totalRaw: Math.round(total), 
+      total: fmtMoney(total),
+      preRatioNum: ratioNum,
+      preRatio: ratioStr,
+      type: type === 'buy' ? '買進' : '賣出',
+      typeClass: type,
+      detail: `${(shares/1000).toFixed(1)}張 (${fmtMoney(amt)}), 摩擦成本 ${fmtMoney(totalCost)}`
+    });
+
+    localStorage.setItem('rebalance_logs', JSON.stringify(logs));
+    renderLogAndChart(logs);
+  }
+
+  function initChart(logs) {
+    const ctx = $('assetChart').getContext('2d');
+    myChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [
+        {
+          label: '真實淨資產 (已扣摩擦成本)',
+          data: [],
+          borderColor: '#E8C878',
+          backgroundColor: 'rgba(232, 200, 120, 0.05)',
+          borderWidth: 2, tension: 0.15, fill: true, yAxisID: 'y'
+        },
+        {
+          label: '再平衡前 00685L 比例 (%)',
+          data: [],
+          type: 'bar',
+          backgroundColor: 'rgba(79, 169, 138, 0.2)',
+          borderColor: '#4FA98A',
+          borderWidth: 1, barThickness: 16, yAxisID: 'y1'
+        }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#8B92B2', font: { size: 11, family: 'Noto Sans TC' } } } },
+        scales: {
+          x: { grid: { color: 'rgba(242,239,231,0.04)' }, ticks: { color: '#8B92B2' } },
+          y: {
+            type: 'linear', display: true, position: 'left',
+            title: { display: true, text: '總市值 (扣成本)', color: '#E8C878' },
+            grid: { color: 'rgba(242,239,231,0.06)' },
+            ticks: { color: '#E8C878', callback: v => '$' + v.toLocaleString() }
+          },
+          y1: {
+            type: 'linear', display: true, position: 'right',
+            title: { display: true, text: '持股比例 (%)', color: '#4FA98A' },
+            min: 0, max: 100, grid: { drawOnChartArea: false },
+            ticks: { color: '#4FA98A', callback: v => v + '%' }
+          }
+        }
+      }
+    });
+  }
+
+  function renderLogAndChart(logs) {
+    const tbody = $('logBody');
+    
+    if (!logs || logs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-log">尚無歷史再平衡紀錄。</td></tr>`;
+      if (myChart) {
+        myChart.data.labels = [];
+        myChart.data.datasets[0].data = [];
+        myChart.data.datasets[1].data = [];
+        myChart.update();
+      }
+      return;
+    }
+
+    tbody.innerHTML = logs.map(log => `
+      <tr>
+        <td>${log.time}</td>
+        <td>${log.total}</td>
+        <td>${log.preRatio}</td>
+        <td class="log-action ${log.typeClass}">${log.type}</td>
+        <td>${log.detail}</td>
+      </tr>
+    `).join('');
+
+    const chartData = [...logs].reverse();
+    
+    if (myChart) {
+      myChart.data.labels = chartData.map(d => d.time);
+      myChart.data.datasets[0].data = chartData.map(d => d.totalRaw);
+      myChart.data.datasets[1].data = chartData.map(d => d.preRatioNum);
+      myChart.update();
+    }
+  }
+
+  function clearLog() {
+    if (confirm('確定要清除所有歷史數據與圖表軌跡嗎？')) {
+      if (storageSupported) {
+        localStorage.removeItem('rebalance_logs');
+      }
+      renderLogAndChart([]);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    ['shares', 'price', 'cash', 'discount', 'minFee'].forEach(id => {
+      $(id).addEventListener('focus', function() {
+        setTimeout(() => { this.select(); }, 50);
+      });
+    });
+
+    $('applyBtn').addEventListener('click', applyRebalance);
+    $('fetchPriceBtn').addEventListener('click', fetchLatestPrice);
+    $('clearLogBtn').addEventListener('click', clearLog);
+    
+    // ⚡ 將計算邏輯綁定 Debounce 防抖，設定 500 毫秒延遲
+    const debouncedCalc = debounce(() => {
+      isApplying = false;
+      calc();
+    }, 500);
+
+    // 針對文字/數字輸入框使用防抖監聽 (使用者瘋狂打字時不會卡頓)
+    ['shares', 'price', 'cash', 'discount', 'minFee'].forEach(id => {
+      $(id).addEventListener('input', debouncedCalc);
+    });
+
+    // 針對非文字的點擊/滑動/選擇控制，依然保持即時反應以維持流暢感
+    $('tradeUnit').addEventListener('change', () => { isApplying = false; calc(); });
+
+    ['ratio', 'threshold'].forEach(id => {
+      $(id).addEventListener('input', () => {
+        if(id === 'ratio') $('ratioVal').textContent = $('ratio').value + '%';
+        if(id === 'threshold') $('thresholdVal').textContent = '±' + $('threshold').value + '%';
+      });
+      $(id).addEventListener('change', () => { isApplying = false; calc(); });
+    });
+
+    loadSavedData();
+    calc();
+  });
+})();
+</script>
+</body>
+</html>
